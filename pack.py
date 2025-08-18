@@ -1662,7 +1662,7 @@ class EnhancedTemplateMapperWithImages:
         return mapping_results
     
     # Keep your packaging procedure methods
-    def get_procedure_steps(row_index=0):
+    def get_procedure_steps(self, packaging_type, data_dict):
         """
         Get the 11-step procedure for the given packaging type
         and replace placeholders with actual values from data_dict.
