@@ -820,7 +820,6 @@ class EnhancedImageExtractor:
                 except:
                     pass
             return False
-
             
 class EnhancedTemplateMapperWithImages:
     def __init__(self):
@@ -1685,12 +1684,14 @@ class EnhancedTemplateMapperWithImages:
         """
         Write the procedure steps into the given Excel template file and save as output_path.
         """
+        procedure_steps = self.get_procedure_steps(packaging_type, data_dict)
         # Load the template
         wb = openpyxl.load_workbook(template_path)
         ws = wb.active   # or specify sheet if needed
         # Example: start writing from row 28, col 2 (like your earlier template assumption)
         start_row = 28
         col = 2
+        end_col = 16
 
         for i, step in enumerate(steps, start=0):
             ws.cell(row=start_row + i, column=col, value=step)
