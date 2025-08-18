@@ -1663,21 +1663,18 @@ class EnhancedTemplateMapperWithImages:
     
     # Keep your packaging procedure methods
     def get_procedure_steps(row_index=0):
-        # Load template uploaded by user
-        template_file = st.session_state.template_file
-        df_template = pd.read_excel(template_file, sheet_name="Sheet1", header=None)
-        procedure_steps = df_template.iloc[27:38, 1].dropna().tolist()
-        # Load data file uploaded by user
-        data_file = st.session_state.data_file
-        df_data = pd.read_excel(data_file)
-        values_dict = df_data.iloc[row_index].to_dict()
-        # Replace placeholders with actual values
+        """
+        Get the 11-step procedure for the given packaging type
+        and replace placeholders with actual values from data_dict.
+        """
+        # Example: load from template instead of hardcoding
+        procedure_template = self.procedure_templates.get(packaging_type, [])
         filled_steps = []
-        for step in procedure_steps:
+        for step in procedure_template:
             try:
-                filled_steps.append(step.format(**values_dict))
+                filled_steps.append(step.format(**data_dict))
             except KeyError:
-                filled_steps.append(step)  # leave as is if placeholder missing
+                filled_steps.append(step)  # leave placeholder if no value
         return filled_steps
         
     def write_procedure_steps_to_template(self, worksheet, packaging_type, data_dict):
