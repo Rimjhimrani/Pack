@@ -1680,6 +1680,23 @@ class EnhancedTemplateMapperWithImages:
             except KeyError:
                 filled_steps.append(step)  # leave as is if placeholder missing
         return filled_steps
+        
+    def write_procedure_steps_to_template(self, template_path, output_path, steps):
+        """
+        Write the procedure steps into the given Excel template file and save as output_path.
+        """
+        # Load the template
+        wb = openpyxl.load_workbook(template_path)
+        ws = wb.active   # or specify sheet if needed
+        # Example: start writing from row 28, col 2 (like your earlier template assumption)
+        start_row = 28
+        col = 2
+
+        for i, step in enumerate(steps, start=0):
+            ws.cell(row=start_row + i, column=col, value=step)
+        # Save to output file
+        wb.save(output_path)
+        return True
 
         
 # Packaging types and procedures from reference code
