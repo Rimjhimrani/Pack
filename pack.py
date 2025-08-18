@@ -1680,7 +1680,7 @@ class EnhancedTemplateMapperWithImages:
                 filled_steps.append(step)  # leave as is if placeholder missing
         return filled_steps
         
-    def write_procedure_steps_to_template(self, template_path, output_path, steps):
+    def write_procedure_steps_to_template(self, worksheet, packaging_type, data_dict):
         """
         Write the procedure steps into the given Excel template file and save as output_path.
         """
