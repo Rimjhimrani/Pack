@@ -1273,35 +1273,29 @@ class EnhancedTemplateMapperWithImages:
     def read_procedure_steps_from_template(self, template_path, packaging_type=None):
         """
         Read procedure steps directly from the Excel template.
-        
         Args:
-            template_path: Path to the Excel template
+            template_path: Path to the Excel templat
             packaging_type: Optional packaging type to filter steps
-            
         Returns:
             List of procedure steps with {placeholders}
         """
         try:
             print(f"\n=== READING PROCEDURE STEPS FROM TEMPLATE ===")
             st.write(f"📖 Reading procedure steps from template...")
-            
+        
             workbook = openpyxl.load_workbook(template_path)
             worksheet = workbook.active
-            
+        
             procedure_steps = []
             start_row = 28  # Based on your original code
             target_cols = list(range(2, 19))  # Columns B to P (2 to 16)
-            
-            # Search for procedure steps in the template
-            # Look for merged cells in the procedure area (rows 28+, columns B:P)
-            max_search_rows = 50  # Search up to 50 rows from start_row
+            max_search_rows = 50  # Search up to 50 rows
+            empty_count = 0       # track consecutive empty rows
             
             for row_num in range(start_row, start_row + max_search_rows):
                 try:
-                    # Check if this row has content in the procedure area
                     row_has_content = False
                     step_text = ""
-                    
                     # Look for content in columns B to P
                     for col_num in target_cols:
                         try:
@@ -1314,39 +1308,39 @@ class EnhancedTemplateMapperWithImages:
                                     break
                         except:
                             continue
-                    
                     if row_has_content and step_text:
                         # Clean and validate the step text
                         step_text = step_text.strip()
-                        
+                    
                         # Skip obviously non-procedure content
                         skip_patterns = [
                             r'^[0-9]+$',  # Just numbers
                             r'^[A-Z]$',   # Single letters
                             r'^[-_=]+$',  # Just separators
                         ]
-                        
+                    
                         should_skip = any(re.match(pattern, step_text) for pattern in skip_patterns)
-                        
+                    
                         if not should_skip and len(step_text) > 5:  # Minimum length check
                             procedure_steps.append(step_text)
                             print(f"📝 Found step {len(procedure_steps)}: {step_text[:50]}...")
-                            
+                        empty_count = 0  # reset empty counter after a valid step
+                    else:
+                        empty_count += 1
+                        if empty_count >= 3:  # stop after 3 consecutive empty rows
+                            break
                 except Exception as e:
                     print(f"⚠️ Error reading row {row_num}: {e}")
                     continue
-            
             workbook.close()
-            
+        
             print(f"✅ Successfully read {len(procedure_steps)} procedure steps from template")
             st.write(f"✅ Found {len(procedure_steps)} procedure steps in template")
-            
+        
             # Debug: Show found steps
             for i, step in enumerate(procedure_steps, 1):
                 print(f"  Step {i}: {step[:100]}...")
-            
             return procedure_steps
-            
         except Exception as e:
             print(f"❌ Error reading procedure steps from template: {e}")
             st.error(f"Error reading procedure steps from template: {e}")
