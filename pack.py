@@ -2108,7 +2108,6 @@ def main():
     # Step 1: Select Packaging Type
     if st.session_state.current_step == 1:
         st.header("📦 Step 1: Select Packaging Type")
-        
         # Create columns for packaging types
         cols = st.columns(3)
         for i, packaging_type in enumerate(PACKAGING_TYPES):
@@ -2116,16 +2115,11 @@ def main():
                 if st.button(packaging_type, key=f"pkg_{i}", use_container_width=True):
                     st.session_state.selected_packaging_type = packaging_type
                     navigate_to_step(2)
-        
+                    
         # Show selected packaging details
         if st.session_state.selected_packaging_type:
             st.success(f"Selected: {st.session_state.selected_packaging_type}")
-            
-            with st.expander("View Packaging Procedure"):
-                procedures = PACKAGING_PROCEDURES.get(st.session_state.selected_packaging_type, [])
-                for i, step in enumerate(procedures, 1):
-                    st.write(f"{i}. {step}")
-    
+        
     # Step 2: Upload Template File
     elif st.session_state.current_step == 2:
         st.header("📄 Step 2: Upload Template File")
