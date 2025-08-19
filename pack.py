@@ -670,10 +670,10 @@ class EnhancedImageExtractor:
                 else:
                     # Fallback to default positions with correct sizes
                     fallback_positions = {
-                        'current': 'T3',
+                        'current': 'W4',
                         'primary': 'A42',
-                        'secondary': 'F42',
-                        'label': 'K42'
+                        'secondary': 'G42',
+                        'label': 'M42'
                     }
                     position = fallback_positions.get(img_type, 'A1')
                     success = self._place_image_at_position(
@@ -743,10 +743,10 @@ class EnhancedImageExtractor:
         
             # Fixed positions for different image types
             positions = {
-                'current': 'T3',      # Current packaging at T3
+                'current': 'W4',      # Current packaging at T3
                 'primary': 'A42',     # Primary packaging at A42
-                'secondary': 'F42',   # Secondary packaging at F42
-                'label': 'K42'        # Label at K42
+                'secondary': 'G42',   # Secondary packaging at F42
+                'label': 'M42'        # Label at K42
             }
         
             for img_key, img_data in uploaded_images.items():
