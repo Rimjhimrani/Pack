@@ -1767,6 +1767,7 @@ class EnhancedTemplateMapperWithImages:
                 "Inner L": ["inner l", "inner length", "inner l-mm"],
                 "Inner W": ["inner w", "inner width", "inner w-mm"],
                 "Inner H": ["inner h", "inner height", "inner h-mm"],
+                "Primary Qty/Pack": ["Primary qty/pack", "primary qty/pack", "PRIMARY QTY/PACK"],
                 "Layer":   ["layer", "layers"],
                 "Level":   ["level", "levels"],
                 "x No. of Parts": ["x no of parts", "x no. of parts", "x number of parts", "no. of parts", "number of parts"]
