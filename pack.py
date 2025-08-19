@@ -2381,22 +2381,23 @@ def main():
     # Step 5: Choose Image Option (SAME AS BEFORE)
     elif st.session_state.current_step == 5:
         st.header("🖼️ Step 5: Choose Image Option")
-    
-        col1, col2 = st.columns(2)
-    
+
+        # Three column layout for three options
+        col1, col2, col3 = st.columns(3)
+
         with col1:
             if st.button("🔍 Smart Extract from Data File", use_container_width=True):
                 st.session_state.image_option = 'extract'
-            
+        
                 # Enhanced image extraction
                 with st.spinner("🧠 Analyzing and extracting images..."):
                     extractor = EnhancedImageExtractor()  # Use the new enhanced extractor
                     extracted_images = extractor.extract_images_from_excel(st.session_state.data_file)
-                
+            
                     if extracted_images and 'all_sheets' in extracted_images:
                         st.session_state.extracted_excel_images = extracted_images['all_sheets']
                         st.success(f"✅ Intelligently extracted {len(st.session_state.extracted_excel_images)} images!")
-                    
+                
                         # Enhanced preview with grouping
                         st.write("**📊 Extracted Images Analysis:**")
                         image_types = {}
@@ -2405,29 +2406,33 @@ def main():
                             if img_type not in image_types:
                                 image_types[img_type] = 0
                             image_types[img_type] += 1
-                    
+                
                         # Show type distribution
                         cols = st.columns(len(image_types))
                         for i, (img_type, count) in enumerate(image_types.items()):
                             with cols[i]:
                                 st.metric(f"{img_type.capitalize()}", count)
-                    
+                
                         # Show confidence levels
                         high_confidence = sum(1 for img in st.session_state.extracted_excel_images.values() 
                                               if img.get('confidence', 0) > 0.7)
                         st.info(f"🎯 {high_confidence} images classified with high confidence")
-                    
+                
                     else:
                         st.warning("No images found in the Excel file")
-    
+
         with col2:
             if st.button("📁 Upload New Images", use_container_width=True):
                 st.session_state.image_option = 'upload'
-    
+
+        with col3:
+            if st.button("📄 Generate Without Images", use_container_width=True):
+                st.session_state.image_option = 'no_images'
+
         # Handle upload new images option (Enhanced)
         if st.session_state.image_option == 'upload':
             st.subheader("📤 Upload Images by Type")
-        
+    
             image_types = ['current', 'primary', 'secondary', 'label']
             type_descriptions = {
                 'current': 'Current/Present packaging state',
@@ -2435,23 +2440,23 @@ def main():
                 'secondary': 'Outer/Secondary packaging', 
                 'label': 'Labels, barcodes, or identification'
             }
-        
+    
             uploaded_count = 0
             for img_type in image_types:
                 with st.expander(f"📋 {img_type.capitalize()} Packaging Image", expanded=False):
                     st.write(f"*{type_descriptions[img_type]}*")
-                
+            
                     uploaded_img = st.file_uploader(
                         f"Choose {img_type} image",
                         type=['png', 'jpg', 'jpeg', 'gif', 'bmp'],
                         key=f"img_upload_{img_type}"
                     )
-                
+            
                     if uploaded_img is not None:
                         # Convert to base64
                         img_bytes = uploaded_img.read()
                         img_b64 = base64.b64encode(img_bytes).decode()
-                    
+                
                         # Store in session state with enhanced metadata
                         st.session_state.uploaded_images[f"{img_type}_uploaded"] = {
                             'data': img_b64,
@@ -2461,9 +2466,9 @@ def main():
                             'confidence': 1.0,  # User uploaded = high confidence
                             'source': 'user_upload'
                         }
-                    
+                
                         uploaded_count += 1
-                    
+                
                         # Preview with analysis
                         col1, col2 = st.columns([1, 2])
                         with col1:
@@ -2472,11 +2477,47 @@ def main():
                             st.success(f"✅ {img_type.capitalize()} image uploaded")
                             st.write(f"**Size**: {len(img_bytes):,} bytes")
                             st.write(f"**Format**: {uploaded_img.type}")
-        
+    
             if uploaded_count > 0:
                 st.success(f"📁 {uploaded_count} images uploaded successfully!")
-    
-        # Auto-match option for extracted images
+
+        # Handle no images option
+        elif st.session_state.image_option == 'no_images':
+            st.subheader("📄 Text-Only Generation Mode")
+            st.info("""
+                **📝 Text-Only Mode Selected**
+                Your documents will be generated using only the data from your spreadsheet without any images. This mode:
+                ✅ **Faster Processing** - Quicker generation without image analysis  
+                ✅ **Smaller File Sizes** - Lighter documents for easier sharing  
+                ✅ **Focus on Content** - Emphasizes textual information and data  
+                ✅ **Universal Compatibility** - Works with all systems and formats  
+                **Note:** You can always regenerate with images later if needed.
+            """)
+        
+            # Optional: Allow users to add a note about why no images
+            image_note = st.text_area(
+                "📝 Optional: Add a note about image availability",
+                placeholder="e.g., 'Images to be provided separately' or 'Product images pending approval'",
+                help="This note will be included in generated documents to explain the absence of images"
+            )
+        
+            if image_note:
+                st.session_state.no_images_note = image_note
+        
+            # Show what will be included instead
+            with st.expander("📋 What will be included in text-only mode"):
+                st.write("""
+                    - ✅ All part numbers and specifications
+                    - ✅ Vendor information and codes  
+                    - ✅ Descriptions and technical details
+                    - ✅ Packaging requirements and notes
+                    - ✅ Regulatory and compliance information
+                    - ✅ Custom formatting and styling
+                    - ❌ Product images and visual references
+                    - ❌ Packaging photos and diagrams
+                """)
+
+        # Auto-match option for extracted images (only show if extract option is selected)
         if (st.session_state.image_option == 'extract' and st.session_state.extracted_excel_images and hasattr(st.session_state, 'all_row_data')):
             st.subheader("🎯 Auto-Match Images to Parts")
             if st.button("🤖 Auto-Match Images to Current Part Data"):
@@ -2497,7 +2538,7 @@ def main():
                             vendor_code,
                             current_row=idx + 2  # Assuming row 1 is header, so data starts from row 2
                         )
-                
+            
                         if part_images:
                             matched_results[row_data.get('filename', f'Part_{idx}')] = {
                                 'images': part_images,
@@ -2518,9 +2559,9 @@ def main():
                     # Show matching summary
                     total_matched = sum(result['count'] for result in matched_results.values())
                     parts_with_images = len([r for r in matched_results.values() if r['count'] > 0])
-            
+        
                     st.success(f"🎯 Matched {total_matched} images across {parts_with_images}/{len(matched_results)} parts")
-            
+        
                     # Detailed breakdown
                     with st.expander("📊 Matching Details"):
                         for filename, result in matched_results.items():
@@ -2535,19 +2576,31 @@ def main():
                                 st.caption(f"Types found: {type_summary}")
                             else:
                                 st.warning(f"**{result['part_no']}** ({result['vendor']}): No images")
-    
+
         # Continue button with enhanced validation
         can_continue = False
         if st.session_state.image_option == 'extract':
             can_continue = (st.session_state.extracted_excel_images or hasattr(st.session_state, 'matched_part_images'))
         elif st.session_state.image_option == 'upload':
             can_continue = len(st.session_state.uploaded_images) > 0
-    
+        elif st.session_state.image_option == 'no_images':
+            can_continue = True  # No images option always allows continuation
+
         if can_continue:
-            if st.button("🚀 Continue to Final Generation", key="continue_to_step6", type="primary"):
+            # Show different button text based on option
+            button_text = "🚀 Continue to Final Generation"
+            if st.session_state.image_option == 'no_images':
+                button_text = "📄 Continue to Text-Only Generation"
+        
+            if st.button(button_text, key="continue_to_step6", type="primary"):
                 navigate_to_step(6)
         else:
-            st.info("📋 Please extract or upload images before continuing")
+            if st.session_state.image_option == 'extract':
+                st.info("📋 Please extract images or match images to parts before continuing")
+            elif st.session_state.image_option == 'upload':
+                st.info("📋 Please upload at least one image before continuing")
+            else:
+                st.info("📋 Please select an image option to continue")
     
         # Back navigation
         if st.button("← Go Back", key="back_from_5"):
