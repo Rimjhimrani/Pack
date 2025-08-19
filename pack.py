@@ -1991,7 +1991,7 @@ class EnhancedTemplateMapperWithImages:
 
             start_row = 28
             target_col = 2  # Column B
-            end_col = 16    # Column P
+            end_col = 18    # Column P
 
             steps_written = 0
 
