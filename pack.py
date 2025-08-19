@@ -1290,7 +1290,7 @@ class EnhancedTemplateMapperWithImages:
             
             procedure_steps = []
             start_row = 28  # Based on your original code
-            target_cols = list(range(2, 17))  # Columns B to P (2 to 16)
+            target_cols = list(range(2, 19))  # Columns B to P (2 to 16)
             
             # Search for procedure steps in the template
             # Look for merged cells in the procedure area (rows 28+, columns B:P)
