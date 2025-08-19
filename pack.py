@@ -2664,6 +2664,10 @@ def main():
                         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                         part_no_safe = re.sub(r'[^\w\-_.]', '_', str(row_data.get('part_no', 'Unknown')))
                         vendor_safe = re.sub(r'[^\w\-_.]', '_', str(row_data.get('vendor_code', 'Unknown')))
+                        
+                        # Add row index to ensure uniqueness - this prevents duplicate filenames
+                        row_index = str(i + 1).zfill(3)  # Zero-padded to 3 digits (001, 002, etc.)
+                        final_filename = f"{vendor_safe}_{part_no_safe}_R{row_index}_{timestamp}.xlsx"
                     
                         final_filename = f"{vendor_safe}_{part_no_safe}_{timestamp}.xlsx"
                     
@@ -2720,32 +2724,29 @@ def main():
                     tab1, tab2, tab3 = st.tabs(["📋 Individual Downloads", "📦 Bulk Download", "📊 Generation Report"])
                 
                     with tab1:
-                        for file_info in generated_files:
+                        for file_idx, file_info in enumerate(generated_files):
                             with st.container():
                                 col1, col2, col3 = st.columns([2, 1, 1])
-                            
                                 with col1:
                                     st.write(f"**{file_info['filename']}**")
                                     st.caption(f"Vendor: {file_info['row_info'].get('vendor_code', 'N/A')} | "
                                                f"Part: {file_info['row_info'].get('part_no', 'N/A')} | "
                                                f"Images: {file_info['images_count']}")
-                            
                                 with col2:
                                     st.write(f"📊 {file_info['generation_info']['placement_method']}")
                                     if file_info['images_count'] > 0:
                                         st.success(f"✅ {file_info['images_count']} images")
                                     else:
                                         st.warning("⚠️ No images")
-                            
                                 with col3:
+                                    # FIXED: Use file index to ensure unique keys
                                     st.download_button(
                                         label="📥 Download",
                                         data=file_info['data'],
                                         file_name=file_info['filename'],
                                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                        key=f"download_{file_info['filename']}"
+                                        key=f"download_file_{file_idx}_{timestamp}"  # Unique key using index and timestamp
                                     )
-                            
                                 st.divider()
                 
                     with tab2:
