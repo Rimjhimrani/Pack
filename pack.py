@@ -2006,7 +2006,7 @@ class EnhancedTemplateMapperWithImages:
             
                 try:
                     # Define the merge range for this row (B to P)
-                    merge_range = f"B{step_row}:P{step_row}"
+                    merge_range = f"B{step_row}:R{step_row}"
                     target_cell = worksheet.cell(row=step_row, column=target_col)
                 
                     print(f"📝 Writing filled step {i + 1} to {merge_range}: {step_text[:50]}...")
