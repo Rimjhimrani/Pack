@@ -2047,7 +2047,7 @@ class EnhancedTemplateMapperWithImages:
                     # Adjust row height based on text length
                     chars_per_line = 120
                     num_lines = max(1, len(step_text) // chars_per_line + 1)
-                    estimated_height = 15 + (num_lines - 1) * 15
+                    estimated_height = 11 + (num_lines - 1) * 11
                     worksheet.row_dimensions[step_row].height = estimated_height
 
                     steps_written += 1
