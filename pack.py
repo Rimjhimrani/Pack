@@ -2114,17 +2114,17 @@ PACKAGING_TYPES = [
 ]
 
 def display_packaging_cards():
-    """Alternative card-style layout for packaging selection"""
+    """Alternative card-style layout for packaging selection with larger images"""
     st.header("📦 Step 1: Select Packaging Type")
     
-    # Custom CSS for cards
+    # Custom CSS for cards with larger images
     st.markdown("""
     <style>
     .packaging-card {
         border: 2px solid #ddd;
         border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
+        padding: 20px;
+        margin: 15px 0;
         transition: all 0.3s ease;
         background-color: white;
     }
@@ -2148,7 +2148,7 @@ def display_packaging_cards():
         
         # Create card container with custom styling
         card_style = """
-        <div style="border: 2px solid {}; border-radius: 10px; padding: 15px; margin: 10px 0; 
+        <div style="border: 2px solid {}; border-radius: 10px; padding: 20px; margin: 15px 0; 
                     background-color: {}; transition: all 0.3s ease;">
         """.format(
             "#4CAF50" if is_selected else "#ddd",
@@ -2158,13 +2158,13 @@ def display_packaging_cards():
         st.markdown(card_style, unsafe_allow_html=True)
         
         with st.container():
-            col1, col2, col3 = st.columns([1, 2, 1])
+            col1, col2, col3 = st.columns([2, 3, 1])  # Adjusted column ratios for larger image space
             
             with col1:
                 try:
                     st.image(
                         packaging["image_url"], 
-                        width=150,
+                        width=250,  # Increased width from 150 to 250
                         caption="Preview"
                     )
                 except Exception as e:
@@ -2207,7 +2207,91 @@ def display_packaging_cards():
         st.markdown("---")
 
 def display_packaging_grid():
-    """Grid-style layout for packaging selection with fixed parameters"""
+    """Grid-style layout for packaging selection with consistent image sizes"""
+    st.header("📦 Step 1: Select Packaging Type")
+    st.markdown("Choose the most appropriate packaging type for your needs:")
+    
+    # Custom CSS for consistent grid image sizing
+    st.markdown("""
+    <style>
+    .grid-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        margin-bottom: 10px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fafafa;
+    }
+    .grid-image-container img {
+        max-width: 180px;
+        max-height: 180px;
+        object-fit: contain;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create a grid layout for packaging options
+    cols = st.columns(3)
+    
+    for i, packaging in enumerate(PACKAGING_TYPES):
+        with cols[i % 3]:
+            # Create a container for each packaging option
+            with st.container():
+                # Display image with consistent sizing
+                try:
+                    # Use HTML container for consistent sizing
+                    st.markdown(f"""
+                    <div class="grid-image-container">
+                        <img src="{packaging['image_url']}" alt="{packaging['name']}" />
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Alternative method using st.image with fixed dimensions
+                    # st.image(
+                    #     packaging["image_url"], 
+                    #     caption=packaging["name"],
+                    #     width=180  # Fixed width for consistency
+                    # )
+                except Exception as e:
+                    # Better fallback with consistent sizing
+                    st.markdown("""
+                    <div class="grid-image-container">
+                        <div style="text-align: center; color: #666;">
+                            📦<br>Image loading...
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                # Title and description
+                st.markdown(f"**{packaging['name']}**")
+                st.write(packaging["description"])
+                
+                # Selection button with improved styling
+                is_selected = st.session_state.get('selected_packaging_type') == packaging['name']
+                button_text = "✅ Selected" if is_selected else "Select"
+                
+                if st.button(
+                    button_text,
+                    key=f"pkg_{i}", 
+                    use_container_width=True,
+                    type="primary" if is_selected else "secondary",
+                    disabled=is_selected
+                ):
+                    if not is_selected:
+                        st.session_state.selected_packaging_type = packaging['name']
+                        st.session_state.selected_packaging_image = packaging['image_url']
+                        st.success(f"Selected: {packaging['name']}")
+                        navigate_to_step(2)
+                        st.rerun()
+            
+            # Add some spacing
+            st.markdown("---")
+
+# Alternative grid method using st.image with fixed parameters
+def display_packaging_grid_alternative():
+    """Alternative grid-style layout using st.image with fixed dimensions"""
     st.header("📦 Step 1: Select Packaging Type")
     st.markdown("Choose the most appropriate packaging type for your needs:")
     
@@ -2218,16 +2302,17 @@ def display_packaging_grid():
         with cols[i % 3]:
             # Create a container for each packaging option
             with st.container():
-                # Display image with fixed parameter
+                # Display image with fixed dimensions for consistency
                 try:
                     st.image(
                         packaging["image_url"], 
                         caption=packaging["name"],
-                        use_container_width=True  # Fixed: use_container_width instead of use_column_width
+                        width=180,  # Fixed width for all images
+                        use_container_width=False  # Don't use container width to maintain fixed size
                     )
                 except Exception as e:
-                    # Better fallback with error info
-                    st.warning("📦 Image loading...")
+                    # Consistent fallback
+                    st.info("📦 Image loading...")
                     st.write(f"**{packaging['name']}**")
                     st.caption("Image will load shortly...")
                 
@@ -2240,7 +2325,7 @@ def display_packaging_grid():
                 
                 if st.button(
                     button_text,
-                    key=f"pkg_{i}", 
+                    key=f"pkg_alt_{i}", 
                     use_container_width=True,
                     type="primary" if is_selected else "secondary",
                     disabled=is_selected
@@ -2291,16 +2376,18 @@ def main():
             "Layout Options:",
             ["Grid Layout (3 columns)", "Card Layout (detailed rows)"],
             horizontal=True,
-            help="Grid layout shows items in columns, Card layout shows detailed rows with larger images"
+            help="Grid layout shows items in columns with consistent sizing, Card layout shows detailed rows with larger images"
         )
         
         st.markdown("---")
         
         # Display the chosen layout
         if "Grid Layout" in layout_choice:
-            display_packaging_grid()
+            # You can choose between display_packaging_grid() or display_packaging_grid_alternative()
+            display_packaging_grid()  # Uses HTML/CSS for consistent sizing
+            # display_packaging_grid_alternative()  # Uses st.image with fixed width
         else:
-            display_packaging_cards()
+            display_packaging_cards()  # Now has larger images (250px width)
         
         # Show selected packaging details (common for both layouts)
         if st.session_state.get('selected_packaging_type'):
