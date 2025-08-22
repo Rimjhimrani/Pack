@@ -2249,8 +2249,8 @@ def display_packaging_grid():
         background-color: #fafafa;
     }
     .grid-image-container img {
-        max-width: 180px;
-        max-height: 180px;
+        max-width: 200px;
+        max-height: 200px;
         object-fit: contain;
     }
     </style>
