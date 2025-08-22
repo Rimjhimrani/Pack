@@ -2114,10 +2114,10 @@ PACKAGING_TYPES = [
 ]
 
 def display_packaging_cards():
-    """Alternative card-style layout for packaging selection with larger images"""
+    """Alternative card-style layout for packaging selection with consistent image sizes"""
     st.header("📦 Step 1: Select Packaging Type")
     
-    # Custom CSS for cards with larger images
+    # Custom CSS for cards with consistent image sizing
     st.markdown("""
     <style>
     .packaging-card {
@@ -2136,6 +2136,22 @@ def display_packaging_cards():
     .packaging-card.selected {
         border-color: #4CAF50;
         background-color: #f0f8f0;
+    }
+    .card-image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 250px;
+        height: 250px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background-color: #fafafa;
+        margin: 0 auto;
+    }
+    .card-image-container img {
+        max-width: 230px;
+        max-height: 230px;
+        object-fit: contain;
     }
     .stButton > button {
         width: 100%;
@@ -2162,15 +2178,23 @@ def display_packaging_cards():
             
             with col1:
                 try:
-                    st.image(
-                        packaging["image_url"], 
-                        width=250,  # Increased width from 150 to 250
-                        caption="Preview"
-                    )
+                    # Use HTML container for consistent sizing (250x250px)
+                    st.markdown(f"""
+                    <div class="card-image-container">
+                        <img src="{packaging['image_url']}" alt="{packaging['name']}" />
+                    </div>
+                    <p style="text-align: center; margin-top: 8px; font-size: 0.9em; color: #666;">Preview</p>
+                    """, unsafe_allow_html=True)
                 except Exception as e:
-                    # Better fallback with error info
-                    st.warning("📦 Image loading...")
-                    st.caption(f"URL: {packaging['image_url'][:50]}...")
+                    # Consistent fallback with same dimensions
+                    st.markdown("""
+                    <div class="card-image-container">
+                        <div style="text-align: center; color: #666;">
+                            📦<br>Image loading...
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin-top: 8px; font-size: 0.9em; color: #666;">Preview</p>
+                    """, unsafe_allow_html=True)
             
             with col2:
                 st.subheader(packaging["name"])
@@ -2205,7 +2229,7 @@ def display_packaging_cards():
         
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("---")
-
+        
 def display_packaging_grid():
     """Grid-style layout for packaging selection with consistent image sizes"""
     st.header("📦 Step 1: Select Packaging Type")
