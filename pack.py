@@ -2149,8 +2149,8 @@ def display_packaging_cards():
         margin: 0 auto;
     }
     .card-image-container img {
-        max-width: 230px;
-        max-height: 230px;
+        max-width: 250px;
+        max-height: 250px;
         object-fit: contain;
     }
     .stButton > button {
