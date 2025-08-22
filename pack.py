@@ -2068,47 +2068,47 @@ class EnhancedTemplateMapperWithImages:
 PACKAGING_TYPES = [
     {
         "name": "BOX IN BOX SENSITIVE",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Box%20in%20Box%20sensitive.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Box%20in%20Box%20sensitive.png",
         "description": "Double protection for sensitive items"
     },
     {
         "name": "BOX IN BOX",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Box%20in%20box.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Box%20in%20box.png",
         "description": "Standard double boxing protection"
     },
     {
         "name": "CARTON BOX WITH SEPARATOR FOR ONE PART",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Cardboard%20Box%20with%20Protective%20Packing.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Cardboard%20Box%20with%20Protective%20Packing.png",
         "description": "Single item with internal separator"
     },
     {
         "name": "INDIVIDUAL NOT SENSITIVE",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20not%20sensitive.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20not%20sensitive.png",
         "description": "Individual packaging for standard items"
     },
     {
         "name": "INDIVIDUAL PROTECTION FOR EACH PART MANY TYPE",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20each%20part%20many%20types.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20each%20part%20many%20types.png",
         "description": "Different protection for various parts"
     },
     {
         "name": "INDIVIDUAL PROTECTION FOR EACH PART",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20for%20each%20part.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20for%20each%20part.png",
         "description": "Uniform protection for each part"
     },
     {
         "name": "INDIVIDUAL SENSITIVE",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20Sensitive.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Individual%20Sensitive.png",
         "description": "Individual packaging for sensitive items"
     },
     {
         "name": "MANY IN ONE TYPE",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/2af9551cb1033072c5d79e029fe17448f8bbc096/Many%20in%20one.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/2af9551cb1033072c5d79e029fe17448f8bbc096/Many%20in%20one.png",
         "description": "Multiple items in single packaging"
     },
     {
         "name": "SINGLE BOX",
-        "image_url": "https://github.com/Rimjhimrani/Pack/blob/88ee0796f874244af8152c681df74d352cf5359a/Single%20Box.png",
+        "image_url": "https://raw.githubusercontent.com/Rimjhimrani/Pack/88ee0796f874244af8152c681df74d352cf5359a/Single%20Box.png",
         "description": "Simple single box packaging"
     }
 ]
@@ -2126,14 +2126,19 @@ def display_packaging_cards():
         padding: 15px;
         margin: 10px 0;
         transition: all 0.3s ease;
+        background-color: white;
     }
     .packaging-card:hover {
         border-color: #ff6b6b;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
     }
     .packaging-card.selected {
         border-color: #4CAF50;
         background-color: #f0f8f0;
+    }
+    .stButton > button {
+        width: 100%;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -2141,42 +2146,68 @@ def display_packaging_cards():
     for i, packaging in enumerate(PACKAGING_TYPES):
         is_selected = st.session_state.get('selected_packaging_type') == packaging['name']
         
-        # Create card container
-        card_class = "packaging-card selected" if is_selected else "packaging-card"
+        # Create card container with custom styling
+        card_style = """
+        <div style="border: 2px solid {}; border-radius: 10px; padding: 15px; margin: 10px 0; 
+                    background-color: {}; transition: all 0.3s ease;">
+        """.format(
+            "#4CAF50" if is_selected else "#ddd",
+            "#f0f8f0" if is_selected else "white"
+        )
+        
+        st.markdown(card_style, unsafe_allow_html=True)
         
         with st.container():
             col1, col2, col3 = st.columns([1, 2, 1])
             
             with col1:
                 try:
-                    st.image(packaging["image_url"], width=150)
-                except:
-                    st.info("📦")
+                    st.image(
+                        packaging["image_url"], 
+                        width=150,
+                        caption="Preview"
+                    )
+                except Exception as e:
+                    # Better fallback with error info
+                    st.warning("📦 Image loading...")
+                    st.caption(f"URL: {packaging['image_url'][:50]}...")
             
             with col2:
                 st.subheader(packaging["name"])
                 st.write(packaging["description"])
                 
+                # Better button styling and functionality
+                button_text = "✅ Currently Selected" if is_selected else "Select This Type"
+                button_type = "primary" if not is_selected else "secondary"
+                
                 if st.button(
-                    "✅ Selected" if is_selected else "Select This Type",
+                    button_text,
                     key=f"card_{i}",
-                    type="primary" if is_selected else "secondary",
-                    disabled=is_selected
+                    type=button_type,
+                    disabled=is_selected,
+                    use_container_width=True
                 ):
                     if not is_selected:
                         st.session_state.selected_packaging_type = packaging['name']
                         st.session_state.selected_packaging_image = packaging['image_url']
+                        st.success(f"Selected: {packaging['name']}")
+                        # Small delay before navigation
+                        import time
+                        time.sleep(0.5)
                         navigate_to_step(2)
                         st.rerun()
             
             with col3:
                 if is_selected:
-                    st.success("✅")
+                    st.success("✅ Selected")
+                else:
+                    st.write("")  # Empty space for alignment
         
+        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown("---")
 
 def display_packaging_grid():
-    """Grid-style layout for packaging selection"""
+    """Grid-style layout for packaging selection with fixed parameters"""
     st.header("📦 Step 1: Select Packaging Type")
     st.markdown("Choose the most appropriate packaging type for your needs:")
     
@@ -2187,35 +2218,43 @@ def display_packaging_grid():
         with cols[i % 3]:
             # Create a container for each packaging option
             with st.container():
-                # Display image
+                # Display image with fixed parameter
                 try:
                     st.image(
                         packaging["image_url"], 
                         caption=packaging["name"],
-                        use_column_width=True
+                        use_container_width=True  # Fixed: use_container_width instead of use_column_width
                     )
-                except:
-                    # Fallback if image doesn't load
-                    st.info("📦 Image not available")
+                except Exception as e:
+                    # Better fallback with error info
+                    st.warning("📦 Image loading...")
                     st.write(f"**{packaging['name']}**")
+                    st.caption("Image will load shortly...")
                 
                 # Description
                 st.write(packaging["description"])
                 
-                # Selection button
+                # Selection button with improved styling
+                is_selected = st.session_state.get('selected_packaging_type') == packaging['name']
+                button_text = "✅ Selected" if is_selected else "Select"
+                
                 if st.button(
-                    f"Select {packaging['name']}", 
+                    button_text,
                     key=f"pkg_{i}", 
                     use_container_width=True,
-                    type="primary" if st.session_state.get('selected_packaging_type') == packaging['name'] else "secondary"
+                    type="primary" if is_selected else "secondary",
+                    disabled=is_selected
                 ):
-                    st.session_state.selected_packaging_type = packaging['name']
-                    st.session_state.selected_packaging_image = packaging['image_url']
-                    navigate_to_step(2)
-                    st.rerun()
+                    if not is_selected:
+                        st.session_state.selected_packaging_type = packaging['name']
+                        st.session_state.selected_packaging_image = packaging['image_url']
+                        st.success(f"Selected: {packaging['name']}")
+                        navigate_to_step(2)
+                        st.rerun()
             
             # Add some spacing
             st.markdown("---")
+            
 def main():
     # Header
     st.title("📦 AgiloPACK")
@@ -2246,18 +2285,19 @@ def main():
     
     # Step 1: Select Packaging Type
     if st.session_state.current_step == 1:
-        # LAYOUT SELECTOR - Choose which layout to use
+        # Layout selector with better styling
+        st.subheader("Choose Your Display Style")
         layout_choice = st.radio(
-            "Choose layout style:",
-            ["Grid Layout", "Card Layout"],
+            "Layout Options:",
+            ["Grid Layout (3 columns)", "Card Layout (detailed rows)"],
             horizontal=True,
-            help="Grid layout shows items in columns, Card layout shows items in rows"
+            help="Grid layout shows items in columns, Card layout shows detailed rows with larger images"
         )
         
         st.markdown("---")
         
         # Display the chosen layout
-        if layout_choice == "Grid Layout":
+        if "Grid Layout" in layout_choice:
             display_packaging_grid()
         else:
             display_packaging_cards()
@@ -2265,11 +2305,14 @@ def main():
         # Show selected packaging details (common for both layouts)
         if st.session_state.get('selected_packaging_type'):
             st.markdown("### 📋 Selection Summary")
-            with st.expander("Selected Packaging Details", expanded=True):
+            with st.expander("✅ Selected Packaging Details", expanded=True):
                 col1, col2 = st.columns([1, 2])
                 with col1:
                     if st.session_state.get('selected_packaging_image'):
-                        st.image(st.session_state.selected_packaging_image, width=200)
+                        try:
+                            st.image(st.session_state.selected_packaging_image, width=200)
+                        except:
+                            st.info("📦 Selected Package")
                 with col2:
                     st.write(f"**Type:** {st.session_state.selected_packaging_type}")
                     # Find description
@@ -2277,10 +2320,17 @@ def main():
                     if selected_pkg:
                         st.write(f"**Description:** {selected_pkg['description']}")
                     
-                    if st.button("🔄 Change Selection", type="secondary"):
-                        st.session_state.selected_packaging_type = None
-                        st.session_state.selected_packaging_image = None
-                        st.rerun()
+                    # Action buttons
+                    col2a, col2b = st.columns(2)
+                    with col2a:
+                        if st.button("🔄 Change Selection", type="secondary"):
+                            st.session_state.selected_packaging_type = None
+                            st.session_state.selected_packaging_image = None
+                            st.rerun()
+                    with col2b:
+                        if st.button("Continue to Step 2 →", type="primary"):
+                            navigate_to_step(2)
+                            st.rerun()
         
     # Step 2: Upload Template File
     elif st.session_state.current_step == 2:
