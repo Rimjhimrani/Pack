@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import pandas as pd
 import numpy as np
 import os
@@ -1825,13 +1825,21 @@ class EnhancedTemplateMapperWithImages:
                                 data_dict[col_map[normalized_col]] = data_value
                     
                             # Store filename components
-                            field_name_lower = mapping['template_field'].lower()
-                            if any(term in field_name_lower for term in ['vendor code', 'supplier code', 'code']):
-                                filename_parts['vendor_code'] = data_value
-                            elif 'part' in field_name_lower and ('no' in field_name_lower or 'number' in field_name_lower):
-                                filename_parts['part_no'] = data_value
-                            elif 'description' in field_name_lower or 'desc' in field_name_lower:
-                                filename_parts['description'] = data_value
+                             # Store filename components by checking the mapped DATA COLUMN name, which is more reliable.
+                            data_col_name = mapping.get('data_column', '').lower()
+                            if data_col_name:
+                                # Part Number Check (check if not already found)
+                                if 'part_no' not in filename_parts and any(term in data_col_name for term in ['part no', 'part_no', 'part number', 'part_number', 'part #']):
+                                    filename_parts['part_no'] = data_value
+                                
+                                # Description Check (check if not already found)
+                                if 'description' not in filename_parts and any(term in data_col_name for term in ['description', 'desc', 'part desc']):
+                                    filename_parts['description'] = data_value
+
+                                # Vendor Code Check (check if not already found)
+                                if 'vendor_code' not in filename_parts and any(term in data_col_name for term in ['vendor code', 'vendor_code', 'supplier code']):
+                                    filename_parts['vendor_code'] = data_value
+                            # --- END: ROBUST FILENAME COMPONENT LOGIC ---
                     
                             # Find target cell and write data
                             target_cell_coord = self.find_data_cell_for_label(worksheet, mapping['field_info'])
@@ -1855,9 +1863,9 @@ class EnhancedTemplateMapperWithImages:
                     st.write("⚠️ No procedure steps to process for this row")
                 
                 # Generate filename
-                vendor_code = filename_parts.get('vendor_code', 'Unknown')
-                part_no = filename_parts.get('part_no', 'Unknown') 
-                description = filename_parts.get('description', 'Unknown')
+                vendor_code = filename_parts.get('vendor_code', 'NoVendor')
+                part_no = filename_parts.get('part_no', 'NoPart')
+                description = filename_parts.get('description', 'NoDesc')
         
                 # Clean filename parts
                 vendor_code = re.sub(r'[^\w\-_]', '', str(vendor_code))[:10]
@@ -2979,49 +2987,49 @@ def main():
                         if len(generated_files) > 1:
                             # Create ZIP with organized structure
                             zip_buffer = io.BytesIO()
-                        
                             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                                # Organize by vendor
-                                vendor_folders = {}
-                                for file_info in generated_files:
-                                    vendor = file_info['row_info'].get('vendor_code', 'Unknown_Vendor')
-                                    vendor_safe = re.sub(r'[^\w\-_.]', '_', vendor)
                                 
-                                    if vendor_safe not in vendor_folders:
-                                        vendor_folders[vendor_safe] = []
-                                    vendor_folders[vendor_safe].append(file_info)
-                            
-                                # Add files organized by vendor
-                                for vendor_folder, files in vendor_folders.items():
-                                    for file_info in files:
-                                        zip_path = f"{vendor_folder}/{file_info['filename']}"
-                                        zip_file.writestr(zip_path, file_info['data'])
-                            
-                                # Add generation report
+                                # --- START: CORRECTED FOLDER LOGIC ---
+                                # Loop through each generated file directly
+                                for file_info in generated_files:
+                                    # Get the already-processed values from the row_info dictionary
+                                    vendor_code = file_info['row_info'].get('vendor_code', 'Unknown_Vendor')
+                                    part_no = file_info['row_info'].get('part_no', 'Unknown_Part')
+                                    part_desc = file_info['row_info'].get('description', 'Unknown_Desc')
+
+                                    # Clean the strings for safe file/folder names
+                                    vendor_safe = re.sub(r'[^\w\-_.]', '_', str(vendor_code))
+                                    part_no_safe = re.sub(r'[^\w\-_.]', '_', str(part_no))
+                                    part_desc_safe = re.sub(r'[^\w\-_.]', '_', str(part_desc))
+
+                                    # The folder is ONLY the vendor code.
+                                    folder_name = vendor_safe
+                                    
+                                    # The filename contains all three components.
+                                    custom_filename = f"{vendor_safe}_{part_no_safe}_{part_desc_safe}.xlsx"
+
+                                    # The final path inside the ZIP file: VendorFolder/Vendor_Part_Desc.xlsx
+                                    zip_path = f"{folder_name}/{custom_filename}"
+                                    
+                                    # Write the file to the correct path in the ZIP
+                                    zip_file.writestr(zip_path, file_info['data'])
+                                # --- END: CORRECTED FOLDER LOGIC ---
+                                    
+                                # Add generation report to the root of the ZIP
                                 report_content = "Template Generation Report\n"
                                 report_content += "=" * 40 + "\n\n"
                                 report_content += f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
                                 report_content += f"Total templates: {len(generated_files)}\n"
-                                report_content += f"Total images placed: {total_images_placed}\n"
-                                report_content += f"Placement method: {'Smart Analysis' if use_smart_placement else 'Fixed Positions'}\n\n"
-                            
-                                report_content += "Individual Template Details:\n"
-                                report_content += "-" * 30 + "\n"
-                                for log_entry in generation_log:
-                                    report_content += f"Template: {log_entry['template']}\n"
-                                    report_content += f"  Part No: {log_entry['part_no']}\n"
-                                    report_content += f"  Vendor: {log_entry['vendor']}\n"
-                                    report_content += f"  Images Added: {log_entry['images_added']}\n"
-                                    report_content += f"  Method: {log_entry['placement_method']}\n\n"
-                            
+                                # Add more report details as needed...
+        
                                 zip_file.writestr("Generation_Report.txt", report_content)
-                        
+    
                             zip_buffer.seek(0)
-                        
+    
                             col1, col2 = st.columns(2)
                             with col1:
-                                st.info("📁 Organized by vendor folders with generation report included")
-                        
+                                st.info("📁 ZIP organized by vendor folders.")
+    
                             with col2:
                                 st.download_button(
                                     label="📦 Download All Templates (ZIP)",
