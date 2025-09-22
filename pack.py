@@ -1009,30 +1009,35 @@ class EnhancedTemplateMapperWithImages:
             return ""
 
     def is_mappable_field(self, text):
-        """Enhanced field detection for packaging templates"""
+        """Enhanced field detection with specific exclusions to prevent false positives."""
         try:
             if not text or pd.isna(text):
                 return False
-            text = str(text).lower().strip()
-            if not text:
+            
+            text_lower = str(text).lower().strip()
+            if not text_lower:
                 return False
-            print(f"DEBUG is_mappable_field: Checking '{text}'")
-
-            # Skip header-like patterns that should not be treated as fields
-            header_exclusions = [
-                'vendor information', 'part information', 'primary packaging', 'secondary packaging',
-                'packaging instruction', 'procedure', 'steps', 'process'
+            
+            # Exclude administrative fields that are not meant for data entry.
+            exclusion_patterns = [
+                'vendor information', 'part information', 'primary packaging', 
+                'secondary packaging', 'packaging instruction', 'procedure', 'steps', 
+                'process', 'issued by', 'reviewed by', 'approved by', 'name & sign',
+                'reference image/pictures'
             ]
-            for exclusion in header_exclusions:
-                if exclusion in text and 'type' not in text:
-                    print(f"DEBUG: Excluding '{text}' as header")
+            
+            for exclusion in exclusion_patterns:
+                if exclusion in text_lower:
+                    if 'type' in text_lower and 'packaging' in text_lower:
+                        continue
+                    print(f"DEBUG: Excluding '{text}' as it matches exclusion '{exclusion}'")
                     return False
         
-            # Define mappable field patterns for packaging templates
+            # Define valid, specific patterns for mappable fields
             mappable_patterns = [
                 r'packaging\s+type', r'\btype\b',
                 r'\bl[-\s]*mm\b', r'\bw[-\s]*mm\b', r'\bh[-\s]*mm\b',
-                r'\bl\b', r'\bw\b', r'\bh\b',
+                r'\b(l|w|h)\b',
                 r'part\s+l\b', r'part\s+w\b', r'part\s+h\b',
                 r'\blength\b', r'\bwidth\b', r'\bheight\b',
                 r'qty[/\s]*pack', r'quantity\b', r'weight\b', r'empty\s+weight',
@@ -1041,41 +1046,25 @@ class EnhancedTemplateMapperWithImages:
                 r'\bdate\b',
                 r'\brev(ision)?\s*no\.?\b',
                 # Procedure-specific patterns
-                r'\bx\s*no\.?\s*of\s*parts\b',
-                r'\bx\s*no\s*of\s*parts\b',
-                r'\bx\s*number\s*of\s*parts\b',
-                r'\bno\.?\s*of\s*parts\b',
-                r'\bnumber\s*of\s*parts\b',
-                r'\bparts\s*per\s*pack\b',
-                r'\bparts\s*quantity\b',
-                r'\bqty\s*of\s*parts\b',
-                r'\blevel\b', r'\blevels\b',
-                r'\blayer\b', r'\blayers\b',
-                r'\bmax\s*level\b', r'\bmaximum\s*level\b',
-                r'\bmax\s*layer\b', r'\bmaximum\s*layer\b',
-                r'\bstacking\s*level\b', r'\bpallet\s*level\b',
-                r'\binner\s*l\b', r'\binner\s*length\b',
-                r'\binner\s*w\b', r'\binner\s*width\b', 
-                r'\binner\s*h\b', r'\binner\s*height\b',
-                r'\binner\s*qty[/\s]*pack\b',
-                r'\bouter\s*l\b', r'\bouter\s*length\b',
-                r'\bouter\s*w\b', r'\bouter\s*width\b',
-                r'\bouter\s*h\b', r'\bouter\s*height\b',
-                r'\bpallet\b', r'\bpalletiz\w*\b',
-                r'\bproblems\b' 
+                r'\bx\s*no\.?\s*of\s*parts\b', r'no\.?\s*of\s*parts\b',
+                r'\blevel\b', r'\blevels\b', r'\blayer\b', r'\blayers\b',
+                r'\binner\s*l\b', r'\binner\s*w\b', r'\binner\s*h\b',
+                r'\bouter\s*l\b', r'\bouter\s*w\b', r'\bouter\s*h\b',
+                r'\bpallet\b', r'\bproblems\b' 
             ]
         
             for pattern in mappable_patterns:
-                if re.search(pattern, text):
+                if re.search(pattern, text_lower):
                     print(f"DEBUG: '{text}' matches pattern '{pattern}'")
                     return True
         
-            if text.endswith(':'):
+            if text_lower.endswith(':'):
                 print(f"DEBUG: '{text}' ends with colon")
                 return True
         
-            print(f"DEBUG: '{text}' is NOT mappable")
+            print(f"DEBUG: '{text}' is NOT a mappable field")
             return False
+            
         except Exception as e:
             st.error(f"Error in is_mappable_field: {e}")
             return False
@@ -1374,206 +1363,84 @@ class EnhancedTemplateMapperWithImages:
                 
                 print(f"Processing step {i}: {step[:50]}...")
                 
-                # Enhanced mapping with multiple fallback options
+                # --- START: MODIFIED SECTION ---
                 replacements = {
-                    # *** CRITICAL: Enhanced quantity mappings - multiple fallbacks ***
                     '{x No. of Parts}': (
-                        data_dict.get('x No. of Parts') or 
-                        data_dict.get('X No. of Parts') or
-                        data_dict.get('x no. of parts') or
-                        data_dict.get('X no. of parts') or
-                        data_dict.get('no. of parts') or
-                        data_dict.get('No. of Parts') or
-                        data_dict.get('number of parts') or
-                        data_dict.get('Number of Parts') or
-                        data_dict.get('parts per pack') or
-                        data_dict.get('Parts Per Pack') or
-                        data_dict.get('qty of parts') or
-                        data_dict.get('Qty of Parts') or
-                        '8'  # Default fallback
+                        data_dict.get('x No. of Parts') or '8'
                     ),
-                
-                    # *** CRITICAL: Enhanced Level mappings - multiple fallbacks ***
                     '{Level}': (
-                        data_dict.get('Level') or
-                        data_dict.get('level') or
-                        data_dict.get('LEVEL') or
-                        data_dict.get('Levels') or
-                        data_dict.get('levels') or
-                        data_dict.get('max level') or
-                        data_dict.get('Max Level') or
-                        data_dict.get('maximum level') or
-                        data_dict.get('Maximum Level') or
-                        data_dict.get('stacking level') or
-                        data_dict.get('Stacking Level') or
-                        '5'  # Default fallback
+                        data_dict.get('Level') or '5'
                     ),
-                
-                    # *** CRITICAL: Enhanced Layer mappings - multiple fallbacks ***
                     '{Layer}': (
-                        data_dict.get('Layer') or
-                        data_dict.get('layer') or
-                        data_dict.get('LAYER') or
-                        data_dict.get('Layers') or
-                        data_dict.get('layers') or
-                        data_dict.get('max layer') or
-                        data_dict.get('Max Layer') or
-                        data_dict.get('maximum layer') or
-                        data_dict.get('Maximum Layer') or
-                        '4'  # Default fallback
+                        data_dict.get('Layer') or '4'
                     ),
                     
-                    # Inner dimensions - try multiple key variations
+                    # This is the FIX: Add fallbacks from the primary/secondary dimensions
                     '{Inner L}': (
-                        data_dict.get('Inner L') or 
-                        data_dict.get('inner l') or
-                        data_dict.get('Inner l') or
-                        data_dict.get('INNER L') or
-                        data_dict.get('Inner Length') or
-                        data_dict.get('inner length') or
+                        data_dict.get('Inner L') or
+                        data_dict.get('Primary L-mm') or
                         'XXX'
                     ),
                     '{Inner W}': (
-                        data_dict.get('Inner W') or 
-                        data_dict.get('inner w') or
-                        data_dict.get('Inner w') or
-                        data_dict.get('INNER W') or
-                        data_dict.get('Inner Width') or
-                        data_dict.get('inner width') or
+                        data_dict.get('Inner W') or
+                        data_dict.get('Primary W-mm') or
                         'XXX'
                     ),
                     '{Inner H}': (
-                        data_dict.get('Inner H') or 
-                        data_dict.get('inner h') or
-                        data_dict.get('Inner h') or
-                        data_dict.get('INNER H') or
-                        data_dict.get('Inner Height') or
-                        data_dict.get('inner height') or
+                        data_dict.get('Inner H') or
+                        data_dict.get('Primary H-mm') or
                         'XXX'
                     ),
                     
-                    # Inner Qty/Pack - try multiple variations
                     '{Inner Qty/Pack}': (
                         data_dict.get('Inner Qty/Pack') or
-                        data_dict.get('inner qty/pack') or
-                        data_dict.get('Inner qty/pack') or
-                        data_dict.get('INNER QTY/PACK') or
-                        data_dict.get('Inner Quantity') or
-                        data_dict.get('inner quantity') or
+                        data_dict.get('Primary Qty/Pack') or
                         '1'
                     ),
                     
-                    # Outer dimensions - try multiple variations
                     '{Outer L}': (
                         data_dict.get('Outer L') or 
-                        data_dict.get('outer l') or
-                        data_dict.get('Outer l') or
-                        data_dict.get('OUTER L') or
-                        data_dict.get('Outer Length') or
-                        data_dict.get('outer length') or
+                        data_dict.get('Secondary L-mm') or
                         'XXX'
                     ),
                     '{Outer W}': (
                         data_dict.get('Outer W') or 
-                        data_dict.get('outer w') or
-                        data_dict.get('Outer w') or
-                        data_dict.get('OUTER W') or
-                        data_dict.get('Outer Width') or
-                        data_dict.get('outer width') or
+                        data_dict.get('Secondary W-mm') or
                         'XXX'
                     ),
                     '{Outer H}': (
                         data_dict.get('Outer H') or 
-                        data_dict.get('outer h') or
-                        data_dict.get('Outer h') or
-                        data_dict.get('OUTER H') or
-                        data_dict.get('Outer Height') or
-                        data_dict.get('outer height') or
+                        data_dict.get('Secondary H-mm') or
                         'XXX'
                     ),
-                    
-                    # Primary Qty/Pack - try multiple variations
-                    '{Primary Qty/Pack}': (
-                        data_dict.get('Primary Qty/Pack') or
-                        data_dict.get('primary qty/pack') or
-                        data_dict.get('Primary qty/pack') or
-                        data_dict.get('PRIMARY QTY/PACK') or
-                        data_dict.get('Primary Quantity') or
-                        data_dict.get('primary quantity') or
-                        '1'
+
+                    '{Primary Packaging Type}': (
+                        data_dict.get('Primary Packaging Type') or 'N/A'
+                    ),
+                    '{Secondary Packaging Type}': (
+                        data_dict.get('Secondary Packaging Type') or 'N/A'
                     ),
                     
-                    # Generic Qty/Pack - try multiple variations
+                    '{Primary Qty/Pack}': (
+                        data_dict.get('Primary Qty/Pack') or '1'
+                    ),
                     '{Qty/Pack}': (
-                        data_dict.get('Qty/Pack') or
-                        data_dict.get('qty/pack') or
-                        data_dict.get('QTY/PACK') or
-                        data_dict.get('Quantity') or
-                        data_dict.get('quantity') or
-                        '1'
+                        data_dict.get('Qty/Pack') or '1'
                     ),
                     '{Qty/Veh}': (
-                        data_dict.get('Qty/Veh') or
-                        data_dict.get('qty/veh') or
-                        data_dict.get('QTY/VEH') or
-                        data_dict.get('Qty/Pack') or
-                        data_dict.get('qty/pack') or
-                        '1'
-                    ),
-                    
-                    # Secondary dimensions
-                    '{Secondary L-mm}': (
-                        data_dict.get('Secondary L-mm') or
-                        data_dict.get('secondary l-mm') or
-                        data_dict.get('Secondary L') or
-                        data_dict.get('secondary l') or
-                        'XXX'
-                    ),
-                    '{Secondary W-mm}': (
-                        data_dict.get('Secondary W-mm') or
-                        data_dict.get('secondary w-mm') or
-                        data_dict.get('Secondary W') or
-                        data_dict.get('secondary w') or
-                        'XXX'
-                    ),
-                    '{Secondary H-mm}': (
-                        data_dict.get('Secondary H-mm') or
-                        data_dict.get('secondary h-mm') or
-                        data_dict.get('Secondary H') or
-                        data_dict.get('secondary h') or
-                        'XXX'
-                    ),
-                    
-                    # Primary dimensions
-                    '{Primary L-mm}': (
-                        data_dict.get('Primary L-mm') or
-                        data_dict.get('primary l-mm') or
-                        data_dict.get('Primary L') or
-                        data_dict.get('primary l') or
-                        'XXX'
-                    ),
-                    '{Primary W-mm}': (
-                        data_dict.get('Primary W-mm') or
-                        data_dict.get('primary w-mm') or
-                        data_dict.get('Primary W') or
-                        data_dict.get('primary w') or
-                        'XXX'
-                    ),
-                    '{Primary H-mm}': (
-                        data_dict.get('Primary H-mm') or
-                        data_dict.get('primary h-mm') or
-                        data_dict.get('Primary H') or
-                        data_dict.get('primary h') or
-                        'XXX'
+                        data_dict.get('Qty/Veh') or '1'
                     )
                 }
+                # --- END: MODIFIED SECTION ---
                 
-                # Debug: Show what replacements are being made
                 for placeholder, raw_value in replacements.items():
                     if placeholder in filled_step:
                         clean_value = self.clean_data_value(raw_value)
                         if not clean_value or clean_value == "":
-                            clean_value = 'XXX'
+                            if 'Type' in placeholder:
+                                clean_value = 'N/A'
+                            else:
+                                clean_value = 'XXX'
                         print(f"  Replacing {placeholder} with '{clean_value}' (from: {raw_value})")
                         filled_step = filled_step.replace(placeholder, str(clean_value))
                 
@@ -1589,7 +1456,7 @@ class EnhancedTemplateMapperWithImages:
         except Exception as e:
             print(f"❌ Error substituting placeholders: {e}")
             st.error(f"Error substituting placeholders: {e}")
-            return procedure_steps  # Return original steps if substitution fails
+            return procedure_steps
 
     def map_data_with_section_context(self, template_fields, data_df):
         """Enhanced mapping with EXACT column name matching"""
@@ -1740,10 +1607,13 @@ class EnhancedTemplateMapperWithImages:
         return mapping_results
 
     def clean_data_value(self, value):
-        """Clean data value to handle NaN, None, and empty values"""
+        """Clean data value, converting whole-number floats to integers."""
         if pd.isna(value) or value is None:
             return ""
-        
+
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+
         str_value = str(value).strip()
         
         if str_value.lower() in ['nan', 'none', 'null', 'n/a', '#n/a', '']:
@@ -1754,147 +1624,116 @@ class EnhancedTemplateMapperWithImages:
     def map_template_with_data(self, template_path, data_path):
         """Enhanced mapping with section-based approach and multiple row processing"""
         try:
-            # Read data from Excel with proper NaN handling
             data_df = pd.read_excel(data_path)
             data_df = data_df.fillna("")
             st.write(f"📊 Loaded data with {len(data_df)} rows and {len(data_df.columns)} columns")
             
-            COLOR_MAP = {
-                'green': PatternFill(start_color='FFC6EFCE', end_color='FFC6EFCE', fill_type='solid'),
-                'red':   PatternFill(start_color='FFFFC7CE', end_color='FFFFC7CE', fill_type='solid'),
-                'blue':  PatternFill(start_color='FFD9E1F2', end_color='FFD9E1F2', fill_type='solid')
-            }
-            
-            # Force direct capture of critical procedure columns if present in Excel
+            # This dictionary defines all the critical data points we need for procedures
+            # and maps various possible column names to a single, standard ("canonical") name.
             critical_cols = {
-                "Outer L": ["outer l", "outer length", "outer l-mm"],
-                "Outer W": ["outer w", "outer width", "outer w-mm"],
-                "Outer H": ["outer h", "outer height", "outer h-mm"],
-                "Inner L": ["inner l", "inner length", "inner l-mm"],
-                "Inner W": ["inner w", "inner width", "inner w-mm"],
-                "Inner H": ["inner h", "inner height", "inner h-mm"],
-                "Primary Qty/Pack": ["Primary qty/pack", "primary qty/pack", "PRIMARY QTY/PACK"],
+                "Outer L": ["outer l", "outer length", "outer l-mm", "secondary l-mm", "secondary l"],
+                "Outer W": ["outer w", "outer width", "outer w-mm", "secondary w-mm", "secondary w"],
+                "Outer H": ["outer h", "outer height", "outer h-mm", "secondary h-mm", "secondary h"],
+                "Inner L": ["inner l", "inner length", "inner l-mm", "primary l-mm", "primary l"],
+                "Inner W": ["inner w", "inner width", "inner w-mm", "primary w-mm", "primary w"],
+                "Inner H": ["inner h", "inner height", "inner h-mm", "primary h-mm", "primary h"],
+                "Primary Qty/Pack": ["primary qty/pack", "primary quantity"],
+                "Primary Packaging Type": ["primary packaging type"],
+                "Secondary Packaging Type": ["secondary packaging type"],
                 "Layer":   ["layer", "layers"],
                 "Level":   ["level", "levels"],
                 "x No. of Parts": ["x no of parts", "x no. of parts", "x number of parts", "no. of parts", "number of parts"]
             }
             
+            # Create a reverse map from a normalized column name to its standard name
             col_map = {}
             for canonical, variants in critical_cols.items():
-                for col in data_df.columns:
-                    col_norm = self.preprocess_text(col)
-                    if any(col_norm == self.preprocess_text(v) for v in variants):
-                        col_map[col_norm] = canonical
-                        print(f"DEBUG: Matched column '{col}' ({col_norm}) -> '{canonical}'")
-                        break
-            
-            # *** NEW: Read procedure steps from template ONCE ***
+                for variant in variants:
+                    col_map[self.preprocess_text(variant)] = canonical
+
             template_procedure_steps = self.read_procedure_steps_from_template(template_path)
             if not template_procedure_steps:
                 st.warning("⚠️ No procedure steps found in template. Will use empty steps.")
             
-            # Store all row data for multi-template generation
             st.session_state.all_row_data = []
     
-            # Process each row
             for row_idx in range(len(data_df)):
                 st.write(f"🔄 Processing row {row_idx + 1}/{len(data_df)}")
                 
-                # Load fresh template for each row
                 workbook = openpyxl.load_workbook(template_path)
                 worksheet = workbook.active
-        
-                # Find template fields with section context
+                
+                data_dict = {}
+                filename_parts = {}
+
+                # --- START: MODIFIED SECTION (THE FIX) ---
+                # Proactively populate data_dict with all critical procedure data first.
+                # This makes the data available regardless of whether a field was mapped visually.
+                for col_name in data_df.columns:
+                    normalized_col = self.preprocess_text(col_name)
+                    if normalized_col in col_map:
+                        canonical_key = col_map[normalized_col]
+                        raw_value = data_df[col_name].iloc[row_idx]
+                        data_value = self.clean_data_value(raw_value)
+                        if data_value: # Only store if there's a value
+                            data_dict[canonical_key] = data_value
+                            print(f"DEBUG (Proactive): Stored '{data_value}' under CANONICAL key: '{canonical_key}' from column '{col_name}'")
+                # --- END: MODIFIED SECTION ---
+
                 template_fields, _ = self.find_template_fields_with_context_and_images(template_path)
-        
-                # Map data with section context for current row
                 mapping_results = self.map_data_with_section_context_for_row(template_fields, data_df, row_idx)
         
-                # Apply mappings to template
                 mapping_count = 0
-                data_dict = {}  # Store mapped data for procedure generation
-                filename_parts = {}  # Store parts for filename
-        
                 for coord, mapping in mapping_results.items():
                     if mapping['is_mappable'] and mapping['data_column']:
                         try:
                             data_col = mapping['data_column']
-                            raw_value = data_df[data_col].iloc[row_idx]  # Use current row
+                            raw_value = data_df[data_col].iloc[row_idx]
                             data_value = self.clean_data_value(raw_value)
                     
-                            # Store in data_dict for procedure generation
+                            # Store by template field name for visual placement
                             data_dict[mapping['template_field']] = data_value
 
-                            # Force map critical fields if the column matches
-                            normalized_col = self.preprocess_text(data_col)
-                            if normalized_col in col_map:
-                                data_dict[col_map[normalized_col]] = data_value
-                    
                             # Store filename components
-                             # Store filename components by checking the mapped DATA COLUMN name, which is more reliable.
                             data_col_name = mapping.get('data_column', '').lower()
                             if data_col_name:
-                                # Part Number Check (check if not already found)
-                                if 'part_no' not in filename_parts and any(term in data_col_name for term in ['part no', 'part_no', 'part number', 'part_number', 'part #']):
+                                if 'part_no' not in filename_parts and any(term in data_col_name for term in ['part no', 'part_no', 'part number']):
                                     filename_parts['part_no'] = data_value
-                                
-                                # Description Check (check if not already found)
-                                if 'description' not in filename_parts and any(term in data_col_name for term in ['description', 'desc', 'part desc']):
+                                if 'description' not in filename_parts and 'description' in data_col_name:
                                     filename_parts['description'] = data_value
-
-                                # Vendor Code Check (check if not already found)
-                                if 'vendor_code' not in filename_parts and any(term in data_col_name for term in ['vendor code', 'vendor_code', 'supplier code']):
+                                if 'vendor_code' not in filename_parts and 'vendor code' in data_col_name:
                                     filename_parts['vendor_code'] = data_value
-                            # --- END: ROBUST FILENAME COMPONENT LOGIC ---
                     
-                            # Find target cell and write data
                             target_cell_coord = self.find_data_cell_for_label(worksheet, mapping['field_info'])
-                    
                             if target_cell_coord and data_value:
-                                target_cell = worksheet[target_cell_coord]
-                                target_cell.value = data_value
+                                worksheet[target_cell_coord].value = data_value
                                 mapping_count += 1
                         except Exception as e:
                             st.write(f"⚠️ Error processing row {row_idx + 1}, field '{mapping['template_field']}': {e}")
                 
-                # *** NEW: Process procedure steps from template instead of hardcoded ***
                 steps_written = 0
                 if template_procedure_steps:
-                    # Substitute placeholders with actual data
                     filled_steps = self.substitute_placeholders_in_steps(template_procedure_steps, data_dict)
-                    
-                    # Write the filled steps back to template
                     steps_written = self.write_filled_steps_to_template(worksheet, filled_steps)
                 else:
                     st.write("⚠️ No procedure steps to process for this row")
                 
-                # Generate filename
                 vendor_code = filename_parts.get('vendor_code', 'NoVendor')
                 part_no = filename_parts.get('part_no', 'NoPart')
                 description = filename_parts.get('description', 'NoDesc')
         
-                # Clean filename parts
                 vendor_code = re.sub(r'[^\w\-_]', '', str(vendor_code))[:10]
                 part_no = re.sub(r'[^\w\-_]', '', str(part_no))[:15]
                 description = re.sub(r'[^\w\-_]', '', str(description))[:20]
         
                 filename = f"{vendor_code}_{part_no}_{description}.xlsx"
         
-                # Save workbook to temporary file
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
                     workbook.save(tmp_file.name)
-            
-                    # Store row data
                     row_data = {
-                        'row_index': row_idx,
-                        'filename': filename,
-                        'file_path': tmp_file.name,
-                        'data_dict': data_dict,
-                        'mapping_count': mapping_count,
-                        'steps_written': steps_written,
-                        'vendor_code': vendor_code,
-                        'part_no': part_no,
-                        'description': description,
+                        'row_index': row_idx, 'filename': filename, 'file_path': tmp_file.name,
+                        'data_dict': data_dict, 'mapping_count': mapping_count, 'steps_written': steps_written,
+                        'vendor_code': vendor_code, 'part_no': part_no, 'description': description,
                         'procedure_steps': filled_steps if template_procedure_steps else []
                     }
                     st.session_state.all_row_data.append(row_data)
@@ -1909,7 +1748,7 @@ class EnhancedTemplateMapperWithImages:
             st.error(f"❌ Error mapping template: {e}")
             st.write("📋 Traceback:", traceback.format_exc())
             return False, []
-            
+
     def map_data_with_section_context_for_row(self, template_fields, data_df, row_idx):
         """Map data for specific row"""
         mapping_results = {}
@@ -2077,7 +1916,6 @@ class EnhancedTemplateMapperWithImages:
             print(f"💥 Critical error in write_filled_steps_to_template: {e}")
             st.error(f"Critical error writing filled procedure steps: {e}")
             return 0
-
 # Packaging types and procedures from reference code
 PACKAGING_TYPES = [
     {
@@ -3204,7 +3042,6 @@ def main():
                 if st.button("❌ Cancel"):
                     st.session_state.show_reset_confirmation = False
                     st.rerun()
-
 
 if __name__ == "__main__":
     main()
