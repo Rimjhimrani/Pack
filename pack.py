@@ -1631,6 +1631,13 @@ class EnhancedTemplateMapperWithImages:
             data_df = pd.read_excel(data_path)
             data_df = data_df.fillna("")
             st.write(f"📊 Loaded data with {len(data_df)} rows and {len(data_df.columns)} columns")
+
+            # --- NEW: Define color fills ---
+            color_fills = {
+                "green": PatternFill(start_color="3CB043", end_color="3CB043", fill_type="solid"),
+                "yellow": PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid"),
+                "red": PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid"),
+            }
             
             # This dictionary defines all the critical data points we need for procedures
             # and maps various possible column names to a single, standard ("canonical") name.
@@ -1713,9 +1720,21 @@ class EnhancedTemplateMapperWithImages:
                             if target_cell_coord and data_value:
                                 worksheet[target_cell_coord].value = data_value
                                 mapping_count += 1
+                                
+                                # --- NEW: Apply color for 'Problems if any' field ---
+                                if 'problems' in self.preprocess_text(mapping['template_field']):
+                                    if 'Remarks' in data_df.columns:
+                                        remark_color = str(data_df['Remarks'].iloc[row_idx]).lower().strip()
+                                        if remark_color in color_fills:
+                                            worksheet[target_cell_coord].fill = color_fills[remark_color]
+                                            print(f"DEBUG: Applied {remark_color} fill to cell {target_cell_coord}")
+                                    else:
+                                        print("DEBUG: 'Remarks' column not found in data file. Skipping color fill.")
+                                # --- END NEW SECTION ---
+
                         except Exception as e:
                             st.write(f"⚠️ Error processing row {row_idx + 1}, field '{mapping['template_field']}': {e}")
-                
+
                 steps_written = 0
                 if template_procedure_steps:
                     filled_steps = self.substitute_placeholders_in_steps(template_procedure_steps, data_dict)
@@ -2266,7 +2285,8 @@ def main():
                         "Outer Dimensions": ["Outer L", "Outer W", "Outer H"],
                         "Primary Packaging": ["Primary L-mm", "Primary W-mm", "Primary H-mm", "Primary Qty/Pack"],
                         "Secondary Packaging": ["Secondary L-mm", "Secondary W-mm", "Secondary H-mm"],
-                        "Part Information": ["Part No", "Part Description", "Vendor Code", "Vendor Name"]
+                        "Part Information": ["Part No", "Part Description", "Vendor Code", "Vendor Name"],
+                        "Miscellaneous": ["Remarks", "Problems"]
                     }
                     
                     found_fields = {}
